@@ -422,7 +422,7 @@ class ComponentResponsibles(aiohttp.web.View):
         def _responsibles_label(
             component: ocm.Component,
             artifact_name: str | None = None,
-            owners_label: str = 'cloud.gardener.cnudie/responsibles',
+            owners_label: str = responsibles.labels.ResponsiblesLabel.name,
         ) -> responsibles.labels.ResponsiblesLabel | None:
             """
             Returns the most specific ResponsiblesLabel for the given component and artifact name,
@@ -778,25 +778,6 @@ async def resolve_component_dependencies(
             node_filter=ocm.iter.Filter.components,
             ocm_repo=ocm_repository_lookup,
         ):
-            # add repo classification label if not present in component labels
-            label_present = False
-            # if no sources present we cannot add the source
-            if not len(component_node.component.sources) > 0:
-                yield component_node
-                continue
-
-            for source in component_node.component.sources:
-                if 'cloud.gardener/cicd/source' in [label.name for label in source.labels]:
-                    label_present = True
-                    break
-            if not label_present:
-                component_node.component.sources[0].labels.append(
-                    ocm.Label(
-                        name='cloud.gardener/cicd/source',
-                        value={'repository-classification': 'main'},
-                    ),
-                )
-
             yield component_node
     except dacite.exceptions.MissingValueError as e:
         raise aiohttp.web.HTTPFailedDependency(text=str(e))
